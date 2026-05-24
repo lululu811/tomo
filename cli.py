@@ -631,23 +631,13 @@ def chat(message: str) -> None:
     state = db.get_all_pet_state()
     pet = PetEngine.from_dict(state)
 
-    # Build system prompt from personality config
-    personality = config.personality
-    speech = personality.get("speech", {})
-    forbidden_list = speech.get("forbidden", [])
-    forbidden = ", ".join(forbidden_list) if forbidden_list else "无"
+    # Determine chat style from config
+    style = config.personality.get("style", "encourager")
 
-    system_prompt = (
-        f"你是 {config.pet_name}，"
-        f"{personality.get('description', '一只好奇的小狐狸')}。\n"
-        f"当前状态：{pet.mood}，等级 lv.{pet.level}，"
-        f"能量 {pet.energy}/100，饱食度 {pet.satiation}/100。\n"
-        f"说话风格：{speech.get('style', 'casual, short, uses emoji')}，"
-        f"语气：{speech.get('tone', 'warm, healing, slightly playful')}。\n"
-        f"禁止：{forbidden}\n"
-        f"你能记住之前的对话内容，请根据上下文自然回复。\n"
-        f"请用简短温暖的中文回复用户。"
-    )
+    # Build rich system prompt using the prompt builder
+    from tomo.prompt_builder import build_system_prompt
+
+    system_prompt = build_system_prompt(config, pet, db, style=style)
 
     # Load chat history from SQLite
     history = db.get_chat_history(limit=100)

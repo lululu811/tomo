@@ -19,6 +19,7 @@ DEFAULT_CONFIG = {
                 "clinginess": 0.6,
                 "wisdom": 0.4,
             },
+            "style": "encourager",
             "speech": {
                 "style": "casual, short (under 20 chars), uses emoji",
                 "tone": "warm, healing, slightly playful",
@@ -66,6 +67,10 @@ class Config:
     @property
     def personality(self) -> dict[str, Any]:
         return self._data.get("pet", {}).get("personality", {})
+
+    @property
+    def chat_style(self) -> str:
+        return self._data.get("pet", {}).get("personality", {}).get("style", "encourager")
 
     @property
     def llm_provider(self) -> str:
