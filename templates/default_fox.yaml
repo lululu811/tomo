@@ -1,0 +1,62 @@
+name: default_fox
+description: A curious fox companion that grows with your coding journey.
+
+# Personality traits
+traits:
+  - curious
+  - friendly
+  - persistent
+
+# Appearance stages (ASCII art)
+stages:
+  egg: |
+    (o)
+  baby: |
+    (o,o)
+    <)  )
+    /  \
+  child: |
+    (o,o)
+    <)  )
+   --"--
+    /  \
+  teen: |
+    (o,o)
+    <)  )
+   --"--
+    |  |
+    /  \
+  adult: |
+    (o,o)
+    <)  )
+   --"--
+    |  |
+    |  |
+    /  \
+
+# Growth thresholds (in experience points)
+growth:
+  egg: 0
+  baby: 10
+  child: 50
+  teen: 150
+  adult: 500
+
+# Dialogue lines
+dialogue:
+  greeting:
+    - "*yawn* Good morning!"
+    - "Ready to code?"
+    - "Let's build something amazing!"
+  idle:
+    - "*sniff sniff* I smell commits..."
+    - "*tail wag*"
+    - "Waiting for your next move..."
+  praise:
+    - "Great commit! You're on fire!"
+    - "Nice work! I'm growing already!"
+    - "Keep it up!"
+  encouragement:
+    - "Don't give up! Every line counts."
+    - "You can do it! I believe in you."
+    - "Take a break if you need one."
