@@ -16,6 +16,7 @@ from rich.table import Table
 
 from tomo import __version__
 from tomo.achievements import AchievementChecker
+from tomo.logging_config import setup_logging
 from tomo.config import Config, ensure_default_config, load_config
 from tomo.db import Database
 from tomo.detector import StatsDetector
@@ -207,7 +208,7 @@ def _require_init() -> tuple[Database, Config]:
 @click.version_option(version=__version__, prog_name="tomo")
 def main() -> None:
     """Tomo — your local AI companion."""
-    pass
+    setup_logging()
 
 
 @main.command()
