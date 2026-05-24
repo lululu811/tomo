@@ -4,11 +4,13 @@ from __future__ import annotations
 
 import json
 import logging
+import os
 import shutil
 import subprocess
 from datetime import datetime
 from pathlib import Path
 from typing import NamedTuple
+from urllib.error import HTTPError
 from urllib.request import Request, urlopen
 
 logger = logging.getLogger(__name__)
@@ -63,18 +65,51 @@ def _get_install_type() -> str:
     return "unknown"
 
 
+def _get_github_token() -> str | None:
+    """Get GitHub token from gh CLI or environment."""
+    # Try gh CLI first
+    try:
+        result = subprocess.run(
+            ["gh", "auth", "token"],
+            capture_output=True,
+            text=True,
+            check=True,
+        )
+        token = result.stdout.strip()
+        if token:
+            return token
+    except (subprocess.CalledProcessError, FileNotFoundError):
+        pass
+
+    # Fallback to environment variable
+    return os.environ.get("GITHUB_TOKEN")
+
+
 def check_update(current_version: str) -> UpdateInfo:
     """Check if a newer version is available on GitHub."""
     current_commit = _get_current_commit()
 
     try:
-        req = Request(
-            GITHUB_API_URL,
-            headers={"Accept": "application/vnd.github.v3+json"},
-        )
+        headers = {"Accept": "application/vnd.github.v3+json"}
+        token = _get_github_token()
+        if token:
+            headers["Authorization"] = f"Bearer {token}"
+
+        req = Request(GITHUB_API_URL, headers=headers)
         with urlopen(req, timeout=10) as response:
             data = json.loads(response.read().decode("utf-8"))
             latest_commit = data["object"]["sha"][:7]
+    except HTTPError as exc:
+        if exc.code == 403:
+            logger.warning("GitHub API rate limit exceeded. Try `gh auth login` or set GITHUB_TOKEN.")
+        else:
+            logger.warning("Failed to check for updates: HTTP %s", exc.code)
+        return UpdateInfo(
+            current_version=current_version,
+            current_commit=current_commit or "unknown",
+            latest_commit="unknown",
+            needs_update=False,
+        )
     except Exception as exc:
         logger.warning("Failed to check for updates: %s", exc)
         return UpdateInfo(
