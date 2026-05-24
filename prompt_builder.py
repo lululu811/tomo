@@ -139,7 +139,7 @@ def _get_stat_joke(stats: dict[str, Any], tool_breakdown: dict[str, int]) -> str
         return _pick(STAT_JOKES["high_activity"])
 
     if tool_breakdown:
-        max_tool = max(tool_breakdown, key=tool_breakdown.get)
+        max_tool = max(tool_breakdown, key=lambda k: tool_breakdown[k])
         if tool_breakdown[max_tool] > total * 0.5:
             if max_tool in ("Bash", "bash"):
                 return _pick(STAT_JOKES["bash_heavy"])
