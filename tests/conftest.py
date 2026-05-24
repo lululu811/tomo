@@ -42,7 +42,7 @@ def default_config():
                     "provider": "ollama",
                     "model": "qwen2.5:7b",
                     "api_key": None,
-                    "call_budget": {"daily_limit": 20, "important_only": True},
+                    "call_budget": {"daily_limit": 0, "important_only": True},
                 },
             }
         }

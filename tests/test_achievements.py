@@ -1,8 +1,5 @@
 """Tests for the achievement system."""
 
-from datetime import datetime
-from unittest.mock import MagicMock
-
 import pytest
 
 from tomo.achievements import ACHIEVEMENTS, Achievement, AchievementChecker

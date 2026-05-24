@@ -1,7 +1,6 @@
 """Tests for the Claude Code stats detector."""
 
 import json
-from pathlib import Path
 
 import pytest
 
@@ -67,9 +66,9 @@ class TestStatsDetector:
     def test_get_delta(self):
         detector = StatsDetector()
         previous = SessionSnapshot(1, 10, 2, {"Bash": 5}, 1000)
-        current = SessionSnapshot(3, 25, 4, {"Bash": 12, "Read": 8}, 2000)
+        _ = SessionSnapshot(3, 25, 4, {"Bash": 12, "Read": 8}, 2000)
 
-        delta = detector.get_delta(previous)
+        detector.get_delta(previous)
         # We can't easily mock read_latest here, but we can test with a real file
 
     def test_get_delta_none_previous(self, tmp_path):
@@ -92,7 +91,11 @@ class TestStatsDetector:
         stats_file = tmp_path / "stats.json"
         data = {
             "sessions": {
-                "s1": {"total_calls": 15, "updated_at": 200, "tool_counts": {"Bash": 10, "Read": 5}},
+                "s1": {
+                    "total_calls": 15,
+                    "updated_at": 200,
+                    "tool_counts": {"Bash": 10, "Read": 5},
+                },
             }
         }
         stats_file.write_text(json.dumps(data))

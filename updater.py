@@ -101,7 +101,9 @@ def check_update(current_version: str) -> UpdateInfo:
             latest_commit = data["object"]["sha"][:7]
     except HTTPError as exc:
         if exc.code == 403:
-            logger.warning("GitHub API rate limit exceeded. Try `gh auth login` or set GITHUB_TOKEN.")
+            logger.warning(
+                "GitHub API rate limit exceeded. Try `gh auth login` or set GITHUB_TOKEN."
+            )
         else:
             logger.warning("Failed to check for updates: HTTP %s", exc.code)
         return UpdateInfo(

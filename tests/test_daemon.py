@@ -1,12 +1,8 @@
 """Tests for the background daemon."""
 
-import signal
-from pathlib import Path
 from unittest.mock import MagicMock, patch
 
-import pytest
-
-from tomo.daemon import Daemon, get_pid, is_running, stop_daemon
+from tomo.daemon import Daemon, is_running, stop_daemon
 
 
 class TestDaemonLifecycle:
@@ -72,13 +68,12 @@ class TestDaemonSync:
         daemon.config = MagicMock()
         daemon.last_snapshot = MagicMock(total_calls=0, session_count=0)
 
-        with patch("tomo.daemon.StatsDetector") as mock_detector:
-            detector = MagicMock()
-            detector.read_latest.return_value = MagicMock(total_calls=0, session_count=0)
-            detector.get_delta.return_value = MagicMock(
-                total_calls=0, session_count=0, tool_breakdown={}
-            )
-            daemon._sync(detector)
+        detector = MagicMock()
+        detector.read_latest.return_value = MagicMock(total_calls=0, session_count=0)
+        detector.get_delta.return_value = MagicMock(
+            total_calls=0, session_count=0, tool_breakdown={}
+        )
+        daemon._sync(detector)
             # Should not crash
 
     def test_sync_with_activity(self):
@@ -90,10 +85,8 @@ class TestDaemonSync:
         daemon.llm_calls = 0
         daemon.llm_failures = 0
 
-        with patch("tomo.daemon.StatsDetector") as mock_detector, \
-             patch("tomo.daemon.PetEngine") as mock_pet, \
-             patch("tomo.daemon.AchievementChecker") as mock_checker, \
-             patch("tomo.daemon.notify") as mock_notify:
+        with patch("tomo.daemon.PetEngine") as mock_pet, \
+             patch("tomo.daemon.AchievementChecker") as mock_checker:
 
             detector = MagicMock()
             detector.read_latest.return_value = MagicMock(total_calls=15, session_count=1)
@@ -123,16 +116,13 @@ class TestDaemonSync:
         daemon.last_snapshot = MagicMock(total_calls=0, session_count=0)
         daemon.decay_counter = 5  # One away from trigger
 
-        with patch("tomo.daemon.StatsDetector") as mock_detector, \
-             patch("tomo.daemon.PetEngine") as mock_pet, \
-             patch("tomo.daemon.notify") as mock_notify:
+        detector = MagicMock()
+        detector.read_latest.return_value = MagicMock(total_calls=0, session_count=0)
+        detector.get_delta.return_value = MagicMock(
+            total_calls=0, session_count=0, tool_breakdown={}
+        )
 
-            detector = MagicMock()
-            detector.read_latest.return_value = MagicMock(total_calls=0, session_count=0)
-            detector.get_delta.return_value = MagicMock(
-                total_calls=0, session_count=0, tool_breakdown={}
-            )
-
+        with patch("tomo.daemon.PetEngine") as mock_pet:
             pet = MagicMock()
             pet.energy = 25
             pet.satiation = 25
@@ -148,12 +138,9 @@ class TestDaemonProactiveFeedback:
         daemon = Daemon()
         daemon.config = MagicMock(llm_important_only=True, pet_name="Test")
 
-        delta = MagicMock(total_calls=10, tool_breakdown={"Bash": 10})
         pet = MagicMock(mood="happy", level=2)
 
-        with patch("tomo.llm.LLMClient") as mock_client, \
-             patch("tomo.daemon.notify") as mock_notify:
-
+        with patch("tomo.llm.LLMClient") as mock_client:
             client = MagicMock()
             client.generate.return_value = "Take a break!"
             mock_client.return_value = client

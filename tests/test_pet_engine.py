@@ -90,7 +90,7 @@ class TestPetEngineExp:
     def test_add_exp_from_session(self):
         pet = PetEngine()
         snapshot = SessionSnapshot(2, 20, 3, {"Bash": 20}, 0)
-        levels = pet.add_exp_from_session(snapshot)
+        pet.add_exp_from_session(snapshot)
         expected_exp = 20 * 1 + 3 * 5
         assert pet.exp == expected_exp
         assert pet.total_sessions == 2

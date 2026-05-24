@@ -1,10 +1,5 @@
 """Tests for the SQLite database layer."""
 
-import pytest
-
-from tomo.db import Database
-
-
 class TestDatabaseInit:
     def test_creates_tables(self, temp_db):
         tables = temp_db.list_tables()

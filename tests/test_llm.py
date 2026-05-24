@@ -104,5 +104,4 @@ class TestLLMClient:
         with patch("tomo.llm.USAGE_FILE", tmp_path / "usage.json"):
             client._record_usage()
             usage = client._load_usage()
-            today = "2025-01-01"  # This may fail depending on date; use patch
             assert isinstance(usage, dict)

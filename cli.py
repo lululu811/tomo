@@ -16,10 +16,10 @@ from rich.table import Table
 
 from tomo import __version__
 from tomo.achievements import AchievementChecker
-from tomo.logging_config import setup_logging
 from tomo.config import Config, ensure_default_config, load_config
 from tomo.db import Database
 from tomo.detector import StatsDetector
+from tomo.logging_config import setup_logging
 from tomo.pet_engine import PetEngine
 from tomo.updater import backup_database, check_update, perform_update
 
@@ -464,7 +464,8 @@ def update(check: bool) -> None:
 
     if check:
         console.print(
-            f"Current version: [cyan]{info.current_version}[/cyan] ([dim]{info.current_commit}[/dim])"
+            f"Current version: [cyan]{info.current_version}[/cyan] "
+            f"([dim]{info.current_commit}[/dim])"
         )
         console.print(f"Latest version:  [cyan]{info.latest_commit}[/cyan]")
         if info.needs_update:
@@ -637,8 +638,10 @@ def chat(message: str) -> None:
     forbidden = ", ".join(forbidden_list) if forbidden_list else "无"
 
     system_prompt = (
-        f"你是 {config.pet_name}，{personality.get('description', '一只好奇的小狐狸')}。\n"
-        f"当前状态：{pet.mood}，等级 lv.{pet.level}，能量 {pet.energy}/100，饱食度 {pet.satiation}/100。\n"
+        f"你是 {config.pet_name}，"
+        f"{personality.get('description', '一只好奇的小狐狸')}。\n"
+        f"当前状态：{pet.mood}，等级 lv.{pet.level}，"
+        f"能量 {pet.energy}/100，饱食度 {pet.satiation}/100。\n"
         f"说话风格：{speech.get('style', 'casual, short, uses emoji')}，"
         f"语气：{speech.get('tone', 'warm, healing, slightly playful')}。\n"
         f"禁止：{forbidden}\n"

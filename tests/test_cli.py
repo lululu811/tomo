@@ -38,8 +38,9 @@ def mock_init():
 
 class TestInit:
     def test_init_creates_files(self, runner, tmp_path):
+        cfg = tmp_path / ".tomo" / "config.yaml"
         with patch("tomo.cli._tomo_dir", return_value=tmp_path / ".tomo"), \
-             patch("tomo.cli.ensure_default_config", return_value=tmp_path / ".tomo" / "config.yaml"):
+             patch("tomo.cli.ensure_default_config", return_value=cfg):
             result = runner.invoke(main, ["init"])
             assert result.exit_code == 0
             assert "TestTomo" in result.output or "Welcome" in result.output

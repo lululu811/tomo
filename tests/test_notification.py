@@ -1,6 +1,6 @@
 """Tests for the notification system."""
 
-from unittest.mock import MagicMock, patch
+from unittest.mock import patch
 
 from tomo.notification import _fallback_notify, notify
 
