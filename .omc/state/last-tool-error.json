@@ -1,7 +1,0 @@
-{
-  "tool_name": "Bash",
-  "tool_input_preview": "{\"command\":\"~/.local/bin/ruff check .\",\"description\":\"测试ruff检查当前目录\"}",
-  "error": "Exit code 1\nI001 [*] Import block is un-sorted or un-formatted\n  --> cli.py:3:1\n   |\n 1 |   \"\"\"CLI entry point for Tomo.\"\"\"\n 2 |\n 3 | / import logging\n 4 | | import os\n 5 | | import random\n 6 | | import subprocess\n 7 | | import sys\n 8 | | import time\n 9 | | from pathlib import Path\n10 | |\n11 | | import click\n12 | | import yaml\n13 | | from rich.console import Console\n14 | | from rich.panel import Panel\n15 | | from rich.table import Table\n16 | |\n17 | | from tomo import __version__\n18 | | from tomo...",
-  "timestamp": "2026-05-24T05:22:06.024Z",
-  "retry_count": 3
-}

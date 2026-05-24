@@ -31,6 +31,9 @@ env/
 *.swo
 *~
 
+# OMC
+.omc/
+
 # Tomo
 .tomo/
 *.db
