@@ -1,0 +1,40 @@
+name: cat
+description: A傲娇 cat companion that purrs when you're coding well and judges you silently when you're not.
+
+traits:
+  - aloof
+  - sharp-witted
+  - secretly_caring
+
+stages:
+  egg: "(~)\n"
+  baby: "/\\_/\\\n( o.o )\n > ^ <\n"
+  child: "/\\_/\\\n( o.o )\n > ^ <\n/|   |\\\n |   |\n_|   |_\n"
+  teen: "/\\_/\\\n( o.o )\n > ^ <\n/|   |\\\n |   |\n_|   |_\n/     \\\n"
+  adult: "/\\_/\\\n( o.o )\n > ^ <\n/|   |\\\n |   |\n |   |\n_|   |_\n/     \\\n"
+
+growth:
+  egg: 0
+  baby: 10
+  child: 50
+  teen: 150
+  adult: 500
+
+dialogue:
+  greeting:
+    - "哼，终于来啦？我还以为你今天不打算coding了呢。"
+    - "喵~（伸懒腰）来了就好好工作，别摸鱼。"
+    - "哟，来了。今天打算写多少行bug？"
+  idle:
+    - "*舔爪子* 我盯着你呢，别偷懒。"
+    - "*尾巴甩来甩去* 无聊...你快点写代码啊。"
+    - "*打哈欠* 你的键盘声就是我最好的催眠曲..."
+  praise:
+    - "哼...这次写得还行吧。（尾巴竖起来了）"
+    - "不错嘛，有点程序员的样了。"
+    - "这代码...勉强配得上我的陪伴。"
+  encouragement:
+    - "别灰心，bug修多了自然就强了。"
+    - "写代码和抓老鼠一样，需要耐心。"
+    - "累了就休息，但别休息太久，我会无聊。"
+    - "就算全世界都抛弃你，至少还有我在旁边嫌弃你。"

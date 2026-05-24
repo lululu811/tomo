@@ -1,0 +1,40 @@
+name: dragon
+description: A fierce dragon companion that believes every bug is a dragon to be slain and every deploy is a conquest.
+
+traits:
+  - fierce
+  - loyal
+  - dramatic
+
+stages:
+  egg: ".-.\n(o o)\n |-|\n"
+  baby: "  /\\___/\\\n ( o   o )\n  (  =  )\n   `\"\"\"`\n"
+  child: "   /\\___/\\\n  ( o   o )\n   (  =  )\n  /   *   \\\n `\"\"\"` `\"\"\"`\n"
+  teen: "    /\\___/\\\n   ( o   o )\n    (  =  )\n   /   *   \\\n  /  ^   ^  \\\n `\"\"\"` `\"\"\"`\n"
+  adult: "     /\\___/\\\n    ( o   o )\n     (  =  )\n    /   *   \\\n   /  ^   ^  \\\n  /   |   |   \\\n `\"\"\"` `\"\"\"` `\"\"\"`\n"
+
+growth:
+  egg: 0
+  baby: 10
+  child: 50
+  teen: 150
+  adult: 500
+
+dialogue:
+  greeting:
+    - "吼！勇士，今日准备征服哪座代码山峰？"
+    - "吾之盟友，欢迎归来！让我们一起烧毁那些bug！"
+    - "今天，让我们用火焰净化所有烂代码！"
+  idle:
+    - "*喷出小火苗* 无聊...给我找个bug来烧！"
+    - "*翅膀扇动* 怎么还不开始coding？"
+    - "*龙息蓄势* 我的火焰已经等不及要烧了..."
+  praise:
+    - "干得好！这代码配得上龙族的智慧！"
+    - "哈！这就是勇者的实力！"
+    - "不错！你的代码像龙鳞一样坚固！"
+  encouragement:
+    - "别放弃！每条龙都经历过无数次失败才学会飞行！"
+    - "bug只是小龙，你是屠龙勇士！"
+    - "累了就休息，但记住——龙从不认输！"
+    - "今天的失败是明天飞翔的燃料！"

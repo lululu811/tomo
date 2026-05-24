@@ -1,41 +1,19 @@
-name: default_fox
+name: fox
 description: A programmer's companion fox that cheers you on with humor and warmth.
 
-# Personality traits
 traits:
   - curious
   - friendly
   - persistent
   - witty
 
-# Appearance stages (ASCII art)
 stages:
-  egg: |
-    (o)
-  baby: |
-    (o,o)
-    <)  )
-    /  \
-  child: |
-    (o,o)
-    <)  )
-   --"--
-    /  \
-  teen: |
-    (o,o)
-    <)  )
-   --"--
-    |  |
-    /  \
-  adult: |
-    (o,o)
-    <)  )
-   --"--
-    |  |
-    |  |
-    /  \
+  egg: "(o)\n"
+  baby: "(o,o)\n<)  )\n/  \\\n"
+  child: "(o,o)\n<)  )\n--\"--\n/  \\\n"
+  teen: "(o,o)\n<)  )\n--\"--\n|  |\n/  \\\n"
+  adult: "(o,o)\n<)  )\n--\"--\n|  |\n|  |\n/  \\\n"
 
-# Growth thresholds (in experience points)
 growth:
   egg: 0
   baby: 10
@@ -43,7 +21,6 @@ growth:
   teen: 150
   adult: 500
 
-# Dialogue lines - used when LLM is unavailable
 dialogue:
   greeting:
     - "早安！今天的代码一定会写得飞起！"
