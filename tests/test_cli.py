@@ -22,7 +22,9 @@ def mock_init():
          patch("tomo.cli.Database") as mock_db_cls, \
          patch("tomo.cli.load_config") as mock_load_cfg:
 
-        mock_db.return_value = Path.home() / ".tomo" / "tomo.db"
+        db_path = MagicMock()
+        db_path.exists.return_value = True
+        mock_db.return_value = db_path
         mock_config.return_value = Path.home() / ".tomo" / "config.yaml"
         mock_db_cls.return_value = MagicMock()
         mock_load_cfg.return_value = MagicMock(
