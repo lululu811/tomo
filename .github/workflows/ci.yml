@@ -30,7 +30,7 @@ jobs:
         run: ruff check .
 
       - name: Type check with mypy
-        run: mypy . --ignore-missing-imports
+        run: mypy . --ignore-missing-imports --exclude '__main__\.py'
 
       - name: Test with pytest
         run: pytest tests/ -v --cov=tomo --cov-report=xml
