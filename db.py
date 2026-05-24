@@ -488,7 +488,7 @@ class Database:
                 (key,),
                 commit=True,
             )
-            return dict(row)
+            return dict(row)  # type: ignore[arg-type]
         return None
 
     def get_memories(

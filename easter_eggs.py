@@ -234,12 +234,12 @@ def check_easter_eggs(species: str = "fox") -> list[EasterEggTrigger]:
     # 2. Scan code patterns in diff
     code_patterns = _scan_code_patterns()
     for pattern in code_patterns:
-        messages = CODE_PATTERNS.get(pattern)
-        if messages:
+        code_messages: list[str] | None = CODE_PATTERNS.get(pattern)
+        if code_messages:
             triggers.append(
                 EasterEggTrigger(
                     trigger_type="code_pattern",
-                    message=_pick_message(messages, species_template),
+                    message=_pick_message(code_messages, species_template),
                     detail=f"pattern: {pattern}",
                 )
             )
