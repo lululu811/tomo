@@ -23,6 +23,7 @@ class TestDatabaseInit:
         assert temp_db.get_pet_state("energy") == "100"
         assert temp_db.get_pet_state("exp") == "0"
         assert temp_db.get_pet_state("level") == "1"
+        assert temp_db.get_pet_state("stage") == "egg"
 
 
 class TestPetState:

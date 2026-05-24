@@ -138,10 +138,36 @@ class TestPetEngineSatiation:
             fresh_pet.feed(-10)
 
 
+class TestPetEngineStage:
+    def test_stage_egg(self, fresh_pet):
+        assert fresh_pet.stage == "egg"
+
+    def test_stage_baby(self):
+        pet = PetEngine(exp=10)
+        assert pet.stage == "baby"
+
+    def test_stage_child(self):
+        pet = PetEngine(exp=50)
+        assert pet.stage == "child"
+
+    def test_stage_teen(self):
+        pet = PetEngine(exp=150)
+        assert pet.stage == "teen"
+
+    def test_stage_adult(self):
+        pet = PetEngine(exp=500)
+        assert pet.stage == "adult"
+
+    def test_stage_in_to_dict(self, fresh_pet):
+        data = fresh_pet.to_dict()
+        assert data["stage"] == "egg"
+
+
 class TestPetEngineSerialization:
     def test_to_dict(self, fresh_pet):
         data = fresh_pet.to_dict()
         assert data["level"] == 1
+        assert data["stage"] == "egg"
         assert data["exp"] == 0
         assert data["energy"] == 100
         assert data["satiation"] == 100
@@ -153,3 +179,4 @@ class TestPetEngineSerialization:
         assert pet.exp == 50
         assert pet.energy == 80
         assert pet.satiation == 60
+        assert pet.stage == "child"

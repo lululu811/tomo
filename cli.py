@@ -9,6 +9,7 @@ import time
 from pathlib import Path
 
 import click
+import yaml
 from rich.console import Console
 from rich.panel import Panel
 from rich.table import Table
@@ -74,26 +75,59 @@ MOOD_MESSAGES = {
     ],
 }
 
-PET_AVATARS = {
-    "low": [
-        "  /\\_/\\  ",
-        " ( o.o ) ",
-        "  > ^ <  ",
-    ],
-    "mid": [
-        "   /\\__/\\   ",
-        "  ( o  o )  ",
-        "  (   皿   )  ",
-        "   /    \\   ",
-    ],
-    "high": [
-        "    \\__/    ",
-        "   ( o  o )   ",
-        "   (  皿  )   ",
-        "   /|    |\\   ",
-        "    |    |    ",
-    ],
-}
+def _load_stage_art() -> dict[str, str]:
+    """Load stage ASCII art from template YAML."""
+    template_path = Path(__file__).parent / "templates" / "default_fox.yaml"
+    if not template_path.exists():
+        return {}
+    try:
+        data = yaml.safe_load(template_path.read_text(encoding="utf-8"))
+        stages = data.get("stages", {})
+        return {k: v.rstrip("\n") for k, v in stages.items() if isinstance(v, str)}
+    except Exception:
+        return {}
+
+
+# Cache stage art on first use
+_STAGE_ART: dict[str, str] | None = None
+
+
+def _get_stage_art() -> dict[str, str]:
+    global _STAGE_ART
+    if _STAGE_ART is None:
+        _STAGE_ART = _load_stage_art()
+    return _STAGE_ART
+
+
+def _get_pet_avatar(stage: str) -> str:
+    """Return ASCII avatar based on evolution stage."""
+    art = _get_stage_art()
+    if stage in art:
+        return art[stage]
+    # Fallback to old level-based avatars
+    if stage == "adult":
+        lines = [
+            "    \\__/    ",
+            "   ( o  o )   ",
+            "   (  皿  )   ",
+            "   /|    |\\   ",
+            "    |    |    ",
+        ]
+    elif stage == "teen":
+        lines = [
+            "   /\\__/\\   ",
+            "  ( o  o )  ",
+            "  (   皿   )  ",
+            "   /    \\   ",
+        ]
+    else:
+        lines = [
+            "  /\\_/\\  ",
+            " ( o.o ) ",
+            "  > ^ <  ",
+        ]
+    return "\n".join(lines)
+
 
 PLAY_MESSAGES = [
     "You tossed a virtual ball!",
@@ -137,15 +171,6 @@ end
 }
 
 
-def _get_pet_avatar(level: int) -> str:
-    """Return ASCII avatar based on level."""
-    if level >= 8:
-        lines = PET_AVATARS["high"]
-    elif level >= 4:
-        lines = PET_AVATARS["mid"]
-    else:
-        lines = PET_AVATARS["low"]
-    return "\n".join(lines)
 
 
 def _bar(value: int, max_val: int = 100, color: str = "green") -> str:
@@ -229,7 +254,8 @@ def status() -> None:
     if work_type:
         work_info = f"{work_type} ({confidence * 100:.0f}%)"
 
-    avatar = _get_pet_avatar(pet.level)
+    avatar = _get_pet_avatar(pet.stage)
+    stage_label = pet.stage.capitalize()
 
     # Achievement display
     achievement_text = ""
@@ -245,7 +271,7 @@ def status() -> None:
     content = (
         f"[cyan]{avatar}[/cyan]\n"
         f"\n"
-        f"[bold]{config.pet_name}[/bold] lv.{pet.level} {mood_emoji}\n"
+        f"[bold]{config.pet_name}[/bold] lv.{pet.level} {mood_emoji} | Stage: {stage_label}\n"
         f"\n"
         f"Energy:    {_bar(pet.energy, color=energy_color)}\n"
         f"Satiation: {_bar(pet.satiation, color='cyan')}\n"
@@ -565,6 +591,21 @@ def growth() -> None:
             bar = "█" * bar_len + "░" * (10 - bar_len)
             chart += f"  {entry['timestamp'][:10]} |{bar}| +{entry['exp_gained']}\n"
 
+    from tomo.pet_engine import STAGE_THRESHOLDS
+
+    stage_label = pet.stage.capitalize()
+    next_stage = None
+    for threshold, label in STAGE_THRESHOLDS:
+        if pet.exp < threshold:
+            next_stage = (label, threshold)
+            break
+
+    stage_info = f"进化阶段: {stage_label}"
+    if next_stage:
+        stage_info += f" (距离 {next_stage[0].capitalize()} 还需 {next_stage[1] - pet.exp} EXP)"
+    else:
+        stage_info += " (已达最终形态!)"
+
     content = (
         f"[bold]{config.pet_name}[/bold] 成长记录\n"
         f"\n"
@@ -572,6 +613,7 @@ def growth() -> None:
         f"经验: {pet.exp}\n"
         f"距离下一级: {pet.exp_to_next_level} EXP\n"
         f"进度: {_bar(int(pet.level_progress * 100), max_val=100, color='magenta')}\n"
+        f"{stage_info}\n"
         f"\n"
         f"[bold]最近经验获取:[/bold]\n"
         f"{chart if chart else '暂无数据，快去工作吧！💪'}"

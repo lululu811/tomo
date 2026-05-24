@@ -59,6 +59,7 @@ CREATE TABLE IF NOT EXISTS chat_history (
 
 DEFAULT_PET_STATE = {
     "level": "1",
+    "stage": "egg",
     "exp": "0",
     "energy": "100",
     "mood": "neutral",

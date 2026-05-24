@@ -21,6 +21,15 @@ MOOD_THRESHOLDS = [
     (0, 0, "exhausted"),
 ]
 
+# Evolution stages mapped to experience thresholds
+STAGE_THRESHOLDS = [
+    (500, "adult"),
+    (150, "teen"),
+    (50, "child"),
+    (10, "baby"),
+    (0, "egg"),
+]
+
 
 class PetEngine:
     """Manages pet growth, energy, satiation, and mood."""
@@ -38,6 +47,14 @@ class PetEngine:
         self.satiation = max(0, min(SATIATION_MAX, satiation))
         self.total_sessions = max(0, total_sessions)
         self.total_calls = max(0, total_calls)
+
+    @property
+    def stage(self) -> str:
+        """Evolution stage based on total experience."""
+        for threshold, label in STAGE_THRESHOLDS:
+            if self.exp >= threshold:
+                return label
+        return "egg"
 
     @property
     def level(self) -> int:
@@ -117,6 +134,7 @@ class PetEngine:
         """Return a dictionary representation of the pet state."""
         return {
             "level": self.level,
+            "stage": self.stage,
             "exp": self.exp,
             "energy": self.energy,
             "satiation": self.satiation,
