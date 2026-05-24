@@ -1,20 +1,44 @@
-# Tomo（友）
+# Tomo (友)
+
+[![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
 你的本地 AI 工作伴侣，以养成宠物的形式陪伴你的开发工作。
 
 > 核心定位：**不打扰、零侵入、有温度**。Tomo 只读取 Claude Code 本地状态文件，不拦截任何行为，将冷冰冰的工作数据转化为有温度的陪伴体验。
 
+```
+        /\_/\
+       ( o.o )     Tomo lv.3 ^_^
+        > ^ <
+
+Energy:    ████████████████░░░░ 80/100
+Satiation: ████████████████████ 100/100
+Progress:  ████████░░░░░░░░░░░░ 40/100 (to lv.4)
+
+Today's work: 软件开发
+Sessions: 12 | Total calls: 847
+
+Ready to build something amazing!
+```
+
 ---
 
 ## 安装
 
-```bash
-# 克隆或进入项目目录
-cd /home/chenlei/001_AI
+### 从源码安装
 
-# 安装到本地 Python 环境
+```bash
+git clone https://github.com/lululu811/tomo.git
+cd tomo
 pip install -e . --break-system-packages
 ```
+
+### 依赖
+
+- Python 3.10+
+- Click, Rich, PyYAML
+- plyer（可选，用于桌面通知）
 
 ---
 
@@ -27,8 +51,8 @@ tomo init
 ```
 
 这会创建 `~/.tomo/` 目录，包含：
-- `config.yaml` —— 宠物名称、性格、LLM 配置
-- `tomo.db` —— SQLite 数据库（宠物状态、成长日志）
+- `config.yaml` — 宠物名称、性格、LLM 配置
+- `tomo.db` — SQLite 数据库（宠物状态、成长日志）
 
 ### 2. 查看状态
 
@@ -40,16 +64,16 @@ tomo status
 
 ```
 ╭────────────────────────── 🦊 Tomo ───────────────────────────╮
-│ 🦊 Tomo lv.1 ⚡                                              │
-│                                                               │
-│ Energy:    ████████████████████ 100/100                      │
-│ Satiation: ████████████████████ 100/100                      │
-│ Progress:  ░░░░░░░░░░░░░░░░░░░░ 0/100 (to lv.2)              │
-│                                                               │
-│ Today's work: 金融分析 (80%)                                 │
-│ Sessions: 149 | Total calls: 13938                           │
-│                                                               │
-│ Full of energy today!                                        │
+│ 🦊 Tomo lv.1 ⚡                                               │
+│                                                                │
+│ Energy:     ████████████████████ 100/100                      │
+│ Satiation:  ████████████████████ 100/100                      │
+│ Progress:   ░░░░░░░░░░░░░░░░░░░░ 0/100 (to lv.2)              │
+│                                                                │
+│ Today's work: 金融分析 (80%)                                  │
+│ Sessions: 149 | Total calls: 13938                            │
+│                                                                │
+│ Full of energy today!                                         │
 ╰───────────────────────────────────────────────────────────────╯
 ```
 
@@ -146,7 +170,7 @@ pet:
     evolution_path: "知识型"
 
   llm:
-    provider: "ollama"   # ollama | anthropic | openai
+    provider: "ollama"   # ollama | anthropic | openai | siliconflow | deepseek | minimax
     model: "qwen2.5:7b"
     api_key: null
     call_budget:
@@ -223,7 +247,7 @@ Tomo **不硬编码任何目录关键词**。守护进程会根据你的 tool �
 | 数据库 | SQLite |
 | 配置 | PyYAML |
 | 通知 | plyer（跨平台桌面通知） |
-| LLM | Ollama / Anthropic / OpenAI / SiliconFlow / DeepSeek |
+| LLM | Ollama / Anthropic / OpenAI / SiliconFlow / DeepSeek / Minimax |
 
 ---
 
@@ -232,20 +256,29 @@ Tomo **不硬编码任何目录关键词**。守护进程会根据你的 tool �
 ```
 tomo/
 ├── pyproject.toml
+├── CHANGELOG.md
+├── LICENSE
+├── README.md
 ├── tomo/
 │   ├── __init__.py
 │   ├── __main__.py       # python -m tomo
+│   ├── achievements.py   # 成就系统
 │   ├── cli.py            # CLI 入口
 │   ├── config.py         # 配置管理
 │   ├── daemon.py         # 后台守护进程
 │   ├── db.py             # SQLite 数据库
 │   ├── detector.py       # Claude Code 数据解析
+│   ├── exceptions.py     # 自定义异常
 │   ├── llm.py            # LLM 客户端（多 provider）
+│   ├── logging_config.py # 日志配置
 │   ├── notification.py   # 跨平台桌面通知
 │   ├── pet_engine.py     # 宠物核心逻辑
+│   ├── updater.py        # 自动更新
 │   └── templates/
 │       └── default_fox.yaml
 └── tests/
+    ├── conftest.py
+    ├── test_achievements.py
     ├── test_cli.py
     ├── test_config.py
     ├── test_daemon.py
@@ -263,6 +296,23 @@ tomo/
 ```bash
 python3 -m pytest tests/ -v
 ```
+
+当前测试覆盖：
+- 宠物引擎（经验、等级、心情、能量、饱食度）
+- 配置系统（加载、验证、合并）
+- 数据检测（session stats 解析）
+- 数据库（CRUD、成就、聊天历史）
+- 成就系统（解锁逻辑、去重）
+- 通知系统（跨平台 fallback）
+- LLM 客户端（多 provider、预算控制）
+- CLI 命令（核心交互）
+- 守护进程（生命周期、同步、衰减）
+
+---
+
+## 许可证
+
+[MIT](LICENSE)
 
 ---
 

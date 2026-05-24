@@ -208,4 +208,4 @@ def perform_update() -> tuple[bool, str]:
     return False, "Could not detect installation type. Please update manually."
 
 
-import sys  # noqa: E402
+import sys

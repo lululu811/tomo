@@ -302,7 +302,7 @@ class Database:
             return None
         # fetch_one=True guarantees a single Row, not a list
         row_single: sqlite3.Row = row  # type: ignore[assignment]
-        return {k: row_single[k] for k in row_single}
+        return {k: row_single[k] for k in row_single.keys()}
 
     def upsert_daily_stats(
         self,
