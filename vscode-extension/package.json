@@ -1,0 +1,102 @@
+{
+  "name": "tomo-vscode",
+  "displayName": "Tomo - AI Companion",
+  "description": "Your virtual pet companion in VS Code",
+  "version": "0.1.0",
+  "publisher": "tomo",
+  "engines": {
+    "vscode": "^1.80.0"
+  },
+  "categories": [
+    "Other",
+    "Machine Learning",
+    "Visualization"
+  ],
+  "keywords": [
+    "tomo",
+    "pet",
+    "companion",
+    "ai",
+    "productivity"
+  ],
+  "activationEvents": [
+    "onStartupFinished"
+  ],
+  "main": "./out/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "tomo.chat",
+        "title": "Chat with Tomo",
+        "category": "Tomo"
+      },
+      {
+        "command": "tomo.status",
+        "title": "Show Tomo Status",
+        "category": "Tomo"
+      },
+      {
+        "command": "tomo.feed",
+        "title": "Feed Tomo",
+        "category": "Tomo"
+      },
+      {
+        "command": "tomo.rest",
+        "title": "Let Tomo Rest",
+        "category": "Tomo"
+      },
+      {
+        "command": "tomo.play",
+        "title": "Play with Tomo",
+        "category": "Tomo"
+      },
+      {
+        "command": "tomo.openPanel",
+        "title": "Open Tomo Panel",
+        "category": "Tomo",
+        "icon": "$(heart)"
+      }
+    ],
+    "views": {
+      "explorer": [
+        {
+          "id": "tomoPanel",
+          "name": "Tomo",
+          "when": "tomo.enabled"
+        }
+      ]
+    },
+    "viewsWelcome": [
+      {
+        "view": "tomoPanel",
+        "contents": "Loading your companion..."
+      }
+    ],
+    "configuration": {
+      "title": "Tomo",
+      "properties": {
+        "tomo.refreshInterval": {
+          "type": "number",
+          "default": 30,
+          "description": "Status bar refresh interval in seconds"
+        },
+        "tomo.cliPath": {
+          "type": "string",
+          "default": "tomo",
+          "description": "Path to the tomo CLI executable"
+        }
+      }
+    }
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "lint": "eslint src --ext ts"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "@types/vscode": "^1.80.0",
+    "typescript": "^5.0.0"
+  }
+}
