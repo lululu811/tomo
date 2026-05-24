@@ -7,6 +7,7 @@ import subprocess
 import sys
 import time
 from pathlib import Path
+from typing import Any
 
 import click
 import yaml
@@ -15,12 +16,16 @@ from rich.panel import Panel
 from rich.table import Table
 
 from tomo import __version__
-from tomo.achievements import AchievementChecker
+from tomo.achievements import ACHIEVEMENTS, AchievementChecker
+from tomo.badge_generator import generate_badge, generate_workflow_yaml
 from tomo.config import Config, ensure_default_config, load_config
 from tomo.db import Database
 from tomo.detector import StatsDetector
 from tomo.logging_config import setup_logging
+from tomo.memory_manager import MemoryManager
 from tomo.pet_engine import PetEngine
+from tomo.share_card import build_ascii_card, build_html_card, build_share_card
+from tomo.species_manager import get_species, list_available_species
 from tomo.updater import backup_database, check_update, perform_update
 
 logger = logging.getLogger(__name__)
@@ -76,33 +81,28 @@ MOOD_MESSAGES = {
     ],
 }
 
-def _load_stage_art() -> dict[str, str]:
-    """Load stage ASCII art from template YAML."""
-    template_path = Path(__file__).parent / "templates" / "default_fox.yaml"
-    if not template_path.exists():
-        return {}
-    try:
-        data = yaml.safe_load(template_path.read_text(encoding="utf-8"))
-        stages = data.get("stages", {})
-        return {k: v.rstrip("\n") for k, v in stages.items() if isinstance(v, str)}
-    except Exception:
-        return {}
+def _load_stage_art(species: str = "fox") -> dict[str, str]:
+    """Load stage ASCII art from species template YAML."""
+    from tomo.species_manager import get_species
+
+    template = get_species(species)
+    stages = template.stages
+    return {k: v.rstrip("\n") for k, v in stages.items() if isinstance(v, str)}
 
 
-# Cache stage art on first use
-_STAGE_ART: dict[str, str] | None = None
+# Cache stage art per species
+_STAGE_ART_CACHE: dict[str, dict[str, str]] = {}
 
 
-def _get_stage_art() -> dict[str, str]:
-    global _STAGE_ART
-    if _STAGE_ART is None:
-        _STAGE_ART = _load_stage_art()
-    return _STAGE_ART
+def _get_stage_art(species: str = "fox") -> dict[str, str]:
+    if species not in _STAGE_ART_CACHE:
+        _STAGE_ART_CACHE[species] = _load_stage_art(species)
+    return _STAGE_ART_CACHE[species]
 
 
-def _get_pet_avatar(stage: str) -> str:
-    """Return ASCII avatar based on evolution stage."""
-    art = _get_stage_art()
+def _get_pet_avatar(stage: str, species: str = "fox") -> str:
+    """Return ASCII avatar based on evolution stage and species."""
+    art = _get_stage_art(species)
     if stage in art:
         return art[stage]
     # Fallback to old level-based avatars
@@ -255,7 +255,7 @@ def status() -> None:
     if work_type:
         work_info = f"{work_type} ({confidence * 100:.0f}%)"
 
-    avatar = _get_pet_avatar(pet.stage)
+    avatar = _get_pet_avatar(pet.stage, config.species)
     stage_label = pet.stage.capitalize()
 
     # Achievement display
@@ -269,10 +269,15 @@ def status() -> None:
             f"{a.icon} {a.name}" for a in new_achievements
         )
 
+    # Affinity display
+    mem_mgr = MemoryManager(db)
+    affinity_display = mem_mgr.get_affinity_display()
+
     content = (
         f"[cyan]{avatar}[/cyan]\n"
         f"\n"
         f"[bold]{config.pet_name}[/bold] lv.{pet.level} {mood_emoji} | Stage: {stage_label}\n"
+        f"{affinity_display}\n"
         f"\n"
         f"Energy:    {_bar(pet.energy, color=energy_color)}\n"
         f"Satiation: {_bar(pet.satiation, color='cyan')}\n"
@@ -308,6 +313,11 @@ def feed() -> None:
         f"Fed {config.pet_name}. Satiation +{gained}.",
     )
 
+    # Affinity
+    mem_mgr = MemoryManager(db)
+    level = mem_mgr.add_affinity("feed")
+    _maybe_affinity_message(level, config)
+
     msg = random.choice(FEED_MESSAGES)
     console.print(
         f"[green]{config.pet_avatar} {msg}[/green] (Satiation: {old_satiation} -> {pet.satiation})"
@@ -330,6 +340,11 @@ def rest() -> None:
         "interaction",
         f"{config.pet_name} rested. Energy +{gained}.",
     )
+
+    # Affinity
+    mem_mgr = MemoryManager(db)
+    level = mem_mgr.add_affinity("rest")
+    _maybe_affinity_message(level, config)
 
     msg = random.choice(REST_MESSAGES)
     console.print(f"[blue]{config.pet_avatar} {msg}[/blue] (Energy: {old_energy} -> {pet.energy})")
@@ -360,6 +375,11 @@ def play() -> None:
         "interaction",
         f"Played with {config.pet_name}. Energy -10, Satiation -5.",
     )
+
+    # Affinity
+    mem_mgr = MemoryManager(db)
+    level = mem_mgr.add_affinity("play")
+    _maybe_affinity_message(level, config)
 
     msg = random.choice(PLAY_MESSAGES)
     console.print(
@@ -658,5 +678,223 @@ def chat(message: str) -> None:
     db.add_chat_entry("user", message)
     db.add_chat_entry("assistant", response)
 
+    # Affinity + auto-extract memory
+    mem_mgr = MemoryManager(db)
+    level = mem_mgr.add_affinity("chat")
+    _maybe_affinity_message(level, config)
+    extracted = mem_mgr.store_extracted(message)
+    for key in extracted:
+        db.log_growth_event("memory", f"Extracted memory: {key}")
+
     # Display response
     console.print(f"{config.pet_avatar} [bold]{config.pet_name}[/bold]: {response}")
+
+
+@main.command()
+@click.option("--list", "list_flag", is_flag=True, help="List available species")
+@click.option("--switch", "switch_to", type=str, help="Switch to a species")
+def species(list_flag: bool, switch_to: str | None) -> None:
+    """Show or change your pet species."""
+    if list_flag:
+        available = list_available_species()
+        console.print("[bold]Available species:[/bold]")
+        for s in available:
+            template = get_species(s)
+            marker = " *current*" if s == "fox" else ""
+            console.print(f"  {s}: {template.description}{marker}")
+        return
+
+    db, config = _require_init()
+
+    if switch_to:
+        available = list_available_species()
+        if switch_to not in available:
+            console.print(f"[red]Unknown species: {switch_to}[/red]")
+            console.print(f"Available: {', '.join(available)}")
+            return
+
+        # Update config
+        config_path = _config_path()
+        cfg_data = load_config(config_path)._data
+        cfg_data.setdefault("pet", {})["species"] = switch_to
+        with open(config_path, "w", encoding="utf-8") as f:
+            yaml.dump(cfg_data, f, allow_unicode=True, sort_keys=False)
+
+        template = get_species(switch_to)
+        console.print(
+            f"[green]Species switched to {switch_to}![/green]\n"
+            f"{template.description}"
+        )
+        return
+
+    # Show current species
+    current = config.species
+    template = get_species(current)
+    console.print(
+        f"[bold]Current species:[/bold] {current}\n"
+        f"{template.description}\n"
+        f"Use [cyan]tomo species --list[/cyan] to see options or "
+        f"[cyan]tomo species --switch cat[/cyan] to change."
+    )
+
+
+# ------------------------------------------------------------------ #
+# Affinity helper
+# ------------------------------------------------------------------ #
+
+def _maybe_affinity_message(level: Any, config: Config) -> None:
+    """Print affinity level-up message if title changed."""
+    from tomo.memory_manager import AFFINITY_TITLES
+
+    # Check if we just hit a threshold
+    for threshold, title in AFFINITY_TITLES:
+        if level.score == threshold and threshold > 0:
+            console.print(f"[yellow]✨ 亲密度提升！你们现在是 '{title}' 了！[/yellow]")
+            break
+
+
+# ------------------------------------------------------------------ #
+# Memory commands
+# ------------------------------------------------------------------ #
+
+@main.command("remember")
+@click.argument("text")
+@click.option("--as-key", default=None, help="Custom key for this memory.")
+@click.option("--category", default="fact", help="Memory category.")
+def remember_cmd(text: str, as_key: str | None, category: str) -> None:
+    """Ask Tomo to remember something."""
+    db, _config = _require_init()
+    mem_mgr = MemoryManager(db)
+    key = as_key if as_key else text[:30].lower().strip()
+    mem_mgr.remember(key, text, category)
+    mem_mgr.add_affinity("remember")
+    console.print(f"[green]记住了：{text}[/green]")
+
+
+@main.command("memories")
+@click.option("--category", default=None, help="Filter by category.")
+@click.option("--limit", default=20, help="Max memories to show.")
+def memories_cmd(category: str | None, limit: int) -> None:
+    """Show what Tomo remembers about you."""
+    db, _config = _require_init()
+    mem_mgr = MemoryManager(db)
+    memories = mem_mgr.list_memories(category=category, limit=limit)
+    if not memories:
+        console.print("[dim]Tomo 还没记住什么事呢...多跟它聊聊天吧！[/dim]")
+        return
+
+    table = Table(title="Tomo 的记忆")
+    table.add_column("Category", style="cyan", no_wrap=True)
+    table.add_column("Memory", style="green")
+    table.add_column("When", style="dim")
+
+    for mem in memories:
+        created = mem.get("created_at", "")[:10]
+        table.add_row(mem.get("category", "fact"), mem.get("value", ""), created)
+
+    console.print(table)
+
+
+@main.command("forget")
+@click.argument("key")
+def forget_cmd(key: str) -> None:
+    """Ask Tomo to forget something by key."""
+    db, _config = _require_init()
+    mem_mgr = MemoryManager(db)
+    if mem_mgr.forget(key):
+        console.print(f"[green]已经忘记 '{key}' 了。[/green]")
+    else:
+        console.print(f"[yellow]Tomo 本来就不记得 '{key}'。[/yellow]")
+
+
+# ------------------------------------------------------------------ #
+# Share card commands
+# ------------------------------------------------------------------ #
+
+@main.command("share")
+@click.argument("achievement_key", required=False)
+@click.option("--ascii", "is_ascii", is_flag=True, help="Output plain text version.")
+@click.option("--export", "export_path", default=None, help="Export as HTML to path.")
+def share_cmd(
+    achievement_key: str | None,
+    is_ascii: bool,
+    export_path: str | None,
+) -> None:
+    """Share an achievement card."""
+    db, config = _require_init()
+    state = db.get_all_pet_state()
+    pet = PetEngine.from_dict(state)
+
+    checker = AchievementChecker(db)
+    unlocked = checker.get_unlocked_achievements()
+
+    if not unlocked:
+        console.print("[dim]还没有解锁任何成就，快去工作吧！[/dim]")
+        return
+
+    # Pick achievement
+    if achievement_key:
+        ach = ACHIEVEMENTS.get(achievement_key)
+        if not ach:
+            console.print(f"[red]找不到成就 '{achievement_key}'。[/red]")
+            return
+        # Verify it's unlocked
+        if achievement_key not in {a.key for a in unlocked}:
+            console.print(f"[yellow]成就 '{achievement_key}' 还未解锁！[/yellow]")
+            return
+    else:
+        ach = unlocked[0]  # Most recent
+
+    # Get unlock time
+    times = db.get_achievement_times()
+    unlock_time = times.get(ach.key)
+
+    if export_path:
+        html = build_html_card(ach, pet, config, unlock_time)
+        Path(export_path).write_text(html, encoding="utf-8")
+        console.print(f"[green]已导出到 {export_path}[/green]")
+        return
+
+    if is_ascii:
+        text = build_ascii_card(ach, pet, config, unlock_time)
+        console.print(text)
+        return
+
+    card = build_share_card(ach, pet, config, unlock_time)
+    console.print(card)
+
+
+@main.command("badge")
+@click.option(
+    "--output",
+    "output_path",
+    default=None,
+    help="Output SVG path (default: ~/.tomo/badge.svg).",
+)
+@click.option(
+    "--github",
+    "show_workflow",
+    is_flag=True,
+    help="Print GitHub Actions workflow YAML to stdout.",
+)
+def badge_cmd(output_path: str | None, show_workflow: bool) -> None:
+    """Generate a GitHub Profile badge SVG."""
+    if show_workflow:
+        console.print(generate_workflow_yaml())
+        return
+
+    db, config = _require_init()
+    state = db.get_all_pet_state()
+    pet = PetEngine.from_dict(state)
+
+    # Get today's stats
+    from datetime import datetime
+
+    today = datetime.now().strftime("%Y-%m-%d")
+    today_stats = db.get_daily_stats(today)
+
+    svg = generate_badge(pet, config, today_stats)
+
+    out = Path(output_path) if output_path else _tomo_dir() / "badge.svg"
+    out.write_text(svg, encoding="utf-8")
+    console.print(f"[green]Badge saved to {out}[/green]")

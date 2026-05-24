@@ -41,12 +41,14 @@ class PetEngine:
         satiation: int = 100,
         total_sessions: int = 0,
         total_calls: int = 0,
+        affinity: int = 0,
     ):
         self.exp = max(0, exp)
         self.energy = max(0, min(ENERGY_MAX, energy))
         self.satiation = max(0, min(SATIATION_MAX, satiation))
         self.total_sessions = max(0, total_sessions)
         self.total_calls = max(0, total_calls)
+        self.affinity = max(0, affinity)
 
     @property
     def stage(self) -> str:
@@ -141,6 +143,7 @@ class PetEngine:
             "mood": self.mood,
             "total_sessions": self.total_sessions,
             "total_calls": self.total_calls,
+            "affinity": self.affinity,
         }
 
     @classmethod
@@ -152,4 +155,5 @@ class PetEngine:
             satiation=int(data.get("satiation", 100)),
             total_sessions=int(data.get("total_sessions", 0)),
             total_calls=int(data.get("total_calls", 0)),
+            affinity=int(data.get("affinity", 0)),
         )

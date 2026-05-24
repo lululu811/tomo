@@ -12,6 +12,7 @@ DEFAULT_CONFIG = {
     "pet": {
         "name": "Tomo",
         "avatar": "🦊",
+        "species": "fox",
         "personality": {
             "description": "A curious fox companion.",
             "traits": {
@@ -63,6 +64,10 @@ class Config:
     @property
     def pet_avatar(self) -> str:
         return self._data.get("pet", {}).get("avatar", "🦊")
+
+    @property
+    def species(self) -> str:
+        return self._data.get("pet", {}).get("species", "fox")
 
     @property
     def personality(self) -> dict[str, Any]:
@@ -196,8 +201,10 @@ def validate_config(data: dict[str, Any]) -> None:
     # Validate call budget
     budget = pet.get("llm", {}).get("call_budget", {})
     daily_limit = budget.get("daily_limit", 20)
-    if not isinstance(daily_limit, int) or daily_limit < 1:
-        raise ValidationError("llm.call_budget.daily_limit must be a positive integer")
+    if not isinstance(daily_limit, int) or daily_limit < 0:
+        raise ValidationError(
+            "llm.call_budget.daily_limit must be non-negative (0 = unlimited)"
+        )
 
 
 def ensure_default_config() -> Path:

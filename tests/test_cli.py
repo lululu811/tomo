@@ -3,39 +3,7 @@
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
-import pytest
-from click.testing import CliRunner
-
 from tomo.cli import main
-
-
-@pytest.fixture
-def runner():
-    return CliRunner()
-
-
-@pytest.fixture
-def mock_init():
-    """Mock initialization state."""
-    with patch("tomo.cli._db_path") as mock_db, \
-         patch("tomo.cli._config_path") as mock_config, \
-         patch("tomo.cli.Database") as mock_db_cls, \
-         patch("tomo.cli.load_config") as mock_load_cfg:
-
-        db_path = MagicMock()
-        db_path.exists.return_value = True
-        mock_db.return_value = db_path
-        mock_config.return_value = Path.home() / ".tomo" / "config.yaml"
-        mock_db_cls.return_value = MagicMock()
-        mock_load_cfg.return_value = MagicMock(
-            pet_name="TestTomo",
-            pet_avatar="🐱",
-            personality={
-                "description": "Test",
-                "speech": {"style": "casual", "tone": "friendly", "forbidden": []},
-            },
-        )
-        yield
 
 
 class TestInit:

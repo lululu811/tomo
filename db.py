@@ -7,7 +7,7 @@ from typing import Any
 
 from tomo.exceptions import DatabaseError
 
-SCHEMA_VERSION = 2
+SCHEMA_VERSION = 3
 
 SCHEMA = """
 CREATE TABLE IF NOT EXISTS schema_version (
@@ -55,6 +55,17 @@ CREATE TABLE IF NOT EXISTS chat_history (
     content TEXT NOT NULL,
     timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
+
+CREATE TABLE IF NOT EXISTS memory (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    key TEXT UNIQUE NOT NULL,
+    value TEXT NOT NULL,
+    category TEXT DEFAULT "fact",
+    importance INTEGER DEFAULT 1,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    last_accessed TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    access_count INTEGER DEFAULT 0
+);
 """
 
 DEFAULT_PET_STATE = {
@@ -68,6 +79,7 @@ DEFAULT_PET_STATE = {
     "total_calls": "0",
     "unlocked_achievements": "[]",
     "achievement_times": "{}",
+    "affinity": "0",
 }
 
 
@@ -142,6 +154,28 @@ class Database:
                     conn.commit()
             except sqlite3.OperationalError:
                 pass  # Columns already exist
+
+        if version == 3:
+            # Add memory table and affinity default
+            try:
+                with sqlite3.connect(self.db_path) as conn:
+                    conn.execute(
+                        """
+                        CREATE TABLE IF NOT EXISTS memory (
+                            id INTEGER PRIMARY KEY AUTOINCREMENT,
+                            key TEXT UNIQUE NOT NULL,
+                            value TEXT NOT NULL,
+                            category TEXT DEFAULT "fact",
+                            importance INTEGER DEFAULT 1,
+                            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                            last_accessed TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                            access_count INTEGER DEFAULT 0
+                        )
+                        """
+                    )
+                    conn.commit()
+            except sqlite3.OperationalError:
+                pass
 
     def _ensure_default_state(self) -> None:
         for key, value in DEFAULT_PET_STATE.items():
@@ -409,3 +443,100 @@ class Database:
             return json.loads(raw)
         except json.JSONDecodeError:
             return {}
+
+    # ------------------------------------------------------------------ #
+    # Memory system
+    # ------------------------------------------------------------------ #
+
+    def set_memory(
+        self,
+        key: str,
+        value: str,
+        category: str = "fact",
+        importance: int = 1,
+    ) -> None:
+        """Store a memory entry."""
+        self._execute(
+            """
+            INSERT INTO memory (key, value, category, importance)
+            VALUES (?, ?, ?, ?)
+            ON CONFLICT(key) DO UPDATE SET
+                value = excluded.value,
+                category = excluded.category,
+                importance = excluded.importance,
+                last_accessed = CURRENT_TIMESTAMP,
+                access_count = access_count + 1
+            """,
+            (key, value, category, importance),
+            commit=True,
+        )
+
+    def get_memory(self, key: str) -> dict[str, Any] | None:
+        """Retrieve a single memory by key."""
+        row = self._execute(
+            "SELECT * FROM memory WHERE key = ?",
+            (key,),
+            fetch_one=True,
+        )
+        if row:
+            self._execute(
+                """
+                UPDATE memory
+                SET last_accessed = CURRENT_TIMESTAMP, access_count = access_count + 1
+                WHERE key = ?
+                """,
+                (key,),
+                commit=True,
+            )
+            return dict(row)
+        return None
+
+    def get_memories(
+        self,
+        category: str | None = None,
+        limit: int = 50,
+        order_by: str = "last_accessed DESC",
+    ) -> list[dict[str, Any]]:
+        """Retrieve memories, optionally filtered by category."""
+        if category:
+            sql = f"SELECT * FROM memory WHERE category = ? ORDER BY {order_by} LIMIT ?"
+            rows = self._execute(sql, (category, limit), fetch_all=True)
+        else:
+            sql = f"SELECT * FROM memory ORDER BY {order_by} LIMIT ?"
+            rows = self._execute(sql, (limit,), fetch_all=True)
+        return [dict(row) for row in rows] if rows else []
+
+    def delete_memory(self, key: str) -> bool:
+        """Delete a memory by key. Returns True if deleted."""
+        self._execute(
+            "DELETE FROM memory WHERE key = ?",
+            (key,),
+            commit=True,
+        )
+        return self.get_memory(key) is None
+
+    def clear_memories(self, category: str | None = None) -> None:
+        """Delete all memories, optionally filtered by category."""
+        if category:
+            self._execute(
+                "DELETE FROM memory WHERE category = ?",
+                (category,),
+                commit=True,
+            )
+        else:
+            self._execute("DELETE FROM memory", commit=True)
+
+    def search_memories(self, query: str, limit: int = 10) -> list[dict[str, Any]]:
+        """Search memories by key or value content."""
+        pattern = f"%{query}%"
+        rows = self._execute(
+            """
+            SELECT * FROM memory
+            WHERE key LIKE ? OR value LIKE ?
+            ORDER BY importance DESC, last_accessed DESC
+            LIMIT ?
+            """,
+            (pattern, pattern, limit),
+            fetch_all=True,
+        )
+        return [dict(row) for row in rows] if rows else []

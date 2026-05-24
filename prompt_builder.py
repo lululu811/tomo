@@ -179,9 +179,25 @@ def build_system_prompt(
     speech = personality.get("speech", {})
 
     # Gather context
+    from tomo.memory_manager import MemoryManager
+    from tomo.species_manager import get_species
+
     today_stats = _get_today_stats(db)
     recent_achievements = _get_recent_achievements(db)
-    stage_intro = _pick(STAGE_INTROS.get(pet.stage, STAGE_INTROS["egg"]))
+
+    # Load memory and affinity
+    mem_mgr = MemoryManager(db)
+    affinity_level = mem_mgr._get_affinity_level(pet.affinity)
+    memory_lines = mem_mgr.get_memory_context(limit=3)
+
+    # Load species-specific dialogue
+    species_template = get_species(config.species)
+    species_intros = species_template.dialogue
+    if species_intros and pet.stage in species_intros:
+        stage_intro = _pick(species_intros[pet.stage])
+    else:
+        stage_intro = _pick(STAGE_INTROS.get(pet.stage, STAGE_INTROS["egg"]))
+
     mood_quip = _pick(MOOD_QUIPS.get(pet.mood, MOOD_QUIPS["neutral"]))
     level_msg = _get_level_message(pet.level)
 
@@ -212,6 +228,13 @@ def build_system_prompt(
         context_lines.append("\n## 已解锁成就")
         for name in recent_achievements:
             context_lines.append(f"- {name}")
+
+    context_lines.append(f"- 亲密度: {affinity_level.title}（{affinity_level.score}）")
+
+    if memory_lines:
+        context_lines.append("\n## 我记得的事")
+        for line in memory_lines:
+            context_lines.append(line)
 
     context_lines.append("\n## 宠物自白")
     context_lines.append(f"{stage_intro}")

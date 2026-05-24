@@ -46,8 +46,9 @@ tomo = "tomo.cli:main"
 Homepage = "https://github.com/lululu811/tomo"
 Repository = "https://github.com/lululu811/tomo.git"
 
-[tool.setuptools.packages.find]
-include = ["tomo*"]
+[tool.setuptools]
+packages = ["tomo"]
+package-dir = {"tomo" = "."}
 
 [tool.ruff]
 line-length = 100

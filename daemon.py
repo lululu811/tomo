@@ -19,6 +19,7 @@ from tomo.achievements import AchievementChecker
 from tomo.config import Config, load_config
 from tomo.db import Database
 from tomo.detector import SessionSnapshot, StatsDetector
+from tomo.easter_eggs import check_easter_eggs
 from tomo.notification import notify
 from tomo.pet_engine import PetEngine
 
@@ -150,6 +151,13 @@ class Daemon:
                         f"🎉 解锁成就：{ach.name}",
                         ach.description,
                     )
+
+            # Easter egg detection
+            if self.config and self._should_proactive_notify("easter_egg", cooldown=1800):
+                eggs = check_easter_eggs(self.config.species)
+                for egg in eggs[:2]:  # Max 2 eggs per sync
+                    notify("🥚 Tomo 发现彩蛋", egg.message)
+                    self.db.log_growth_event("easter_egg", f"[{egg.trigger_type}] {egg.message}")
 
             # Log growth event
             exp_gained = delta.total_calls + delta.skill_calls * 5
@@ -317,10 +325,11 @@ class Daemon:
             if suggestion:
                 notify("🌙 Tomo 心疼你", suggestion)
 
-    def _should_proactive_notify(self, event_type: str, detail: str | None = None) -> bool:
+    def _should_proactive_notify(
+        self, event_type: str, detail: str | None = None, cooldown: int = 3600
+    ) -> bool:
         """Check if enough time has passed since last notification of this type."""
         now = time.time()
-        cooldown = 3600  # 1 hour cooldown
 
         key = f"{event_type}:{detail}" if detail else event_type
         last = self.last_proactive_notify.get(key, 0)
